@@ -8,11 +8,16 @@
 import SwiftUI
 
 struct CameraView : UIViewControllerRepresentable {
+    
+    @ObservedObject var viewModel: FacePoseViewModel
+    
     func makeUIViewController(context: Context) -> some UIViewController {
-        return CameraViewController()
+        let cameraController = CameraViewController()
+        
+        cameraController.onPoseDetected = { pose in
+                 self.viewModel.facePose = pose
+        }
     }
     
-    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
-        
-    }
+    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {}
 }

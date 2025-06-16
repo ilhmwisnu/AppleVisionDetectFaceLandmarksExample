@@ -13,6 +13,8 @@ class CameraViewController: UIViewController,
     AVCaptureVideoDataOutputSampleBufferDelegate
 {
 
+    var onPoseDetected: ((FacePose) -> Void)? = nil
+
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
     var overlayLayer = CALayer()
@@ -45,11 +47,11 @@ class CameraViewController: UIViewController,
         captureSession.addOutput(videoOutput)
 
         previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = view.layer.bounds
+        previewLayer.videoGravity = .resizeAspect
+        previewLayer.frame = view.layer.frame
         view.layer.addSublayer(previewLayer)
 
-        overlayLayer.frame = view.bounds
+        overlayLayer.frame = view.frame
         view.layer.addSublayer(overlayLayer)
 
         captureSession.startRunning()
@@ -79,20 +81,51 @@ class CameraViewController: UIViewController,
                     results.forEach { faceObservation in
                         print("Face Landmarks:")
 
-                        
-                        
-                        let points: [NormalizedPoint] = faceObservation.landmarks!.allPoints.points
+                        let roll = faceObservation.roll.converted(to: .degrees)
+                        let yaw = faceObservation.yaw.converted(to: .degrees)
+                        let pitch = faceObservation.pitch.converted(
+                            to: .degrees
+                        )
+
+                        print("Roll: ", roll)
+                        print("Yaw: ", yaw)
+                        print("Pitch: ", pitch)
+
+                        self.onPoseDetected?(
+                            FacePose(pitch: pitch.value, yaw: yaw.value, roll: roll.value)
+                        )
+
+                        //                        if roll.value > 105 {
+                        //                            print("Roll -> Right")
+                        //                        } else if roll.value < 75 {
+                        //                            print("Roll -> Left")
+                        //                        }
+                        //
+                        //                        if yaw.value > 15 {
+                        //                            print("Yaw -> Left")
+                        //                        } else if yaw.value < -15 {
+                        //                            print("Yaw -> Right")
+                        //                        }
+                        //
+                        //                        if pitch.value > 15 {
+                        //                            print("Pitch -> Down")
+                        //                        } else if pitch.value < -15 {
+                        //                            print("Pitch -> Up")
+                        //                        }
+
+                        let points: [NormalizedPoint] = faceObservation
+                            .landmarks!.allPoints.points
 
                         let path = UIBezierPath()
 
-                        for i in 0..<points.count  {
+                        for i in 0..<points.count {
                             let point = points[i]
-                            
+
                             let converted = self.convert(
                                 point: point.cgPoint,
                                 boundingBox: faceObservation.boundingBox.cgRect
                             )
-                            
+
                             path.move(to: converted)
                             path.addArc(
                                 withCenter: converted,
@@ -119,22 +152,27 @@ class CameraViewController: UIViewController,
             }
         }
     }
-    
+
     func convert(point: CGPoint, boundingBox: CGRect) -> CGPoint {
         // 1. Convert landmark (normalized in boundingBox) to image coordinates
-        let imageX = boundingBox.origin.x + point.x * boundingBox.width
-        let imageY = boundingBox.origin.y + point.y * boundingBox.height
+        let imageX = (boundingBox.origin.x) + point.x * boundingBox.width
+        let imageY = (boundingBox.origin.y) + point.y * boundingBox.height
 
         // 2. Convert image coordinates (origin bottom-left) to view coordinates (origin top-left)
-        let viewX = imageX * view.bounds.width
-        let viewY = (1 - imageY) * view.bounds.height // Flip only once here
+        let viewX = (1 - imageY) * view.bounds.width  // Flip only once here
+
+        let previewHeight: CGFloat = 4 / 3 * view.bounds.width
+
+        let viewY =
+            (imageX) * previewHeight
+            + ((view.bounds.height - previewHeight) / 2)
 
         return CGPoint(x: viewX, y: viewY)
     }
 
-
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+
         if captureSession.isRunning {
             captureSession.stopRunning()
         }
