@@ -67,21 +67,24 @@ struct ContentView: View {
             ).ignoresSafeArea(edges: .all)
             
             VStack {
-                if (rollDirection() != nil) {
-                    Text("Roll: \(rollDirection()!) ")
-                }
-                
-                if (pitchDirection() != nil) {
-                    Text("Pitch: \(pitchDirection()!) ")
-                }
-                
-                if (yawDirection() != nil) {
-                    Text("Yaw: \(yawDirection()!) ")
+                HStack(spacing: 8) {
+                    
+                    if (rollDirection() != nil) {
+                        PoseText(text:"Roll: \(rollDirection()!) ")
+                    }
+                    
+                    if (pitchDirection() != nil) {
+                        PoseText(text: "Pitch: \(pitchDirection()!) ")
+                    }
+                    
+                    if (yawDirection() != nil) {
+                        PoseText(text: "Yaw: \(yawDirection()!) ")
+                    }
                 }
                 Spacer()
             }
-            .font(.largeTitle)
-            .foregroundColor(.black)
+            .padding(.horizontal,16)
+            .padding(.top,64)
 
         }
     }
